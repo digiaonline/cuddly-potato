@@ -1,0 +1,15 @@
+language: python
+
+python:
+ - "3.6"
+
+install:
+ - pip install pyflakes pycodestyle
+
+script:
+ # Static analysis
+ - pyflakes .
+ - pycodestyle --statistics --count .
+
+matrix:
+  fast_finish: true
