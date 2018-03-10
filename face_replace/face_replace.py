@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 """
-From:
+Find faces in an input image and replace them with other random faces
+
 https://docs.opencv.org/3.3.0/d7/d8b/tutorial_py_face_detection.html
 """
 from __future__ import print_function, unicode_literals
 import argparse
 import cv2
-# import numpy as np
 import os
 import random
-import sys
 
 
 CRISUS = [
@@ -20,38 +19,35 @@ CRISUS = [
 
 
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
-    # initialize the dimensions of the image to be resized and
+    # Initialise the dimensions of the image to be resized and
     # grab the image size
     dim = None
     (h, w) = image.shape[:2]
 
-    # if both the width and height are None, then return the
-    # original image
+    # If both the width and height are None, then return the original image
     if width is None and height is None:
         return image
 
-    # check to see if the width is None
+    # Check to see if the width is None
     if width is None:
-        # calculate the ratio of the height and construct the
-        # dimensions
+        # Calculate the ratio of the height and construct the dimensions
         r = height / float(h)
         dim = (int(w * r), height)
 
-    # otherwise, the height is None
+    # Otherwise, the height is None
     else:
-        # calculate the ratio of the width and construct the
-        # dimensions
+        # Calculate the ratio of the width and construct the dimensions
         r = width / float(w)
         dim = (width, int(h * r))
 
-    # resize the image
+    # Resize the image
     resized = cv2.resize(image, dim, interpolation=inter)
 
-    # return the resized image
+    # Return the resized image
     return resized
 
 
-def detect(infile, face_cascade_path, eye_cascade_path):
+def detect(infile, face_cascade_path, eye_cascade_path, show=False):
 
     face_cascade = cv2.CascadeClassifier(face_cascade_path)
     eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
@@ -61,12 +57,14 @@ def detect(infile, face_cascade_path, eye_cascade_path):
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     print(faces)
     for (x, y, w, h) in faces:
-        cv2.rectangle(l_img, (x, y), (x+w, y+h), (255, 0, 0), 2)
-        roi_gray = gray[y:y+h, x:x+w]
-        roi_color = l_img[y:y+h, x:x+w]
-        eyes = eye_cascade.detectMultiScale(roi_gray)
-        for (ex, ey, ew, eh) in eyes:
-            cv2.rectangle(roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
+        if show:
+            cv2.rectangle(l_img, (x, y), (x+w, y+h), (255, 0, 0), 2)
+            roi_gray = gray[y:y+h, x:x+w]
+            roi_color = l_img[y:y+h, x:x+w]
+            eyes = eye_cascade.detectMultiScale(roi_gray)
+            for (ex, ey, ew, eh) in eyes:
+                cv2.rectangle(
+                    roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
 
         # Load a Crisu head, resize it and paste it
         s_img = cv2.imread(random.choice(CRISUS), -1)
@@ -101,14 +99,13 @@ def detect(infile, face_cascade_path, eye_cascade_path):
     cv2.imshow('img', l_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
-    sys.stdout.write(l_img.tostring())
 
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
-        description='TODO '
-        'Requires OpenCV.',
+        description='Find faces in an input image and '
+                    'replace them with other random faces',
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
         'infile',
@@ -128,11 +125,14 @@ if __name__ == '__main__':
         help='Haar cascade file')
     parser.add_argument(
         '-s', '--show', action='store_true',
+        default=True,
         help='Show detected image with box')
 
     args = parser.parse_args()
-    # print(args)
 
     detect(args.infile,
            os.path.join(args.cascade_path, args.face_cascade),
-           os.path.join(args.cascade_path, args.eye_cascade))
+           os.path.join(args.cascade_path, args.eye_cascade),
+           args.show)
+
+# End of file
