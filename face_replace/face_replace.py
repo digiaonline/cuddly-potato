@@ -49,6 +49,9 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
 
 def detect(infile, face_cascade_path, eye_cascade_path, show=False):
 
+    # A cache so we don't need to re-open the same image
+    crisu_cache = {}
+
     face_cascade = cv2.CascadeClassifier(face_cascade_path)
     eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
     l_img = cv2.imread(infile)
@@ -67,7 +70,11 @@ def detect(infile, face_cascade_path, eye_cascade_path, show=False):
                     roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
 
         # Load a Crisu head, resize it and paste it
-        s_img = cv2.imread(random.choice(CRISUS), -1)
+        random_index = random.randrange(0, len(CRISUS))
+        # Load from cache, or put in cache
+        if random_index not in crisu_cache:
+            crisu_cache[random_index] = cv2.imread(CRISUS[random_index], -1)
+        s_img = crisu_cache[random_index]
 
         # Because we're detecting faces, not heads, but pasting heads,
         # we need to move the head up and left a bit, and make it bigger
