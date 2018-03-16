@@ -76,6 +76,10 @@ def detect(infile, face_cascade_path, eye_cascade_path, show=False):
             crisu_cache[random_index] = cv2.imread(CRISUS[random_index], -1)
         s_img = crisu_cache[random_index]
 
+        # 50% chance to flip the image for some variation
+        if random.random() < 0.5:
+            s_img = cv2.flip(s_img, 1)  # 1 = vertical flip
+
         # Because we're detecting faces, not heads, but pasting heads,
         # we need to move the head up and left a bit, and make it bigger
         # to cover the face
