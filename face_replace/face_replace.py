@@ -47,7 +47,7 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     return resized
 
 
-def detect(infile, face_cascade_path, eye_cascade_path, show=False):
+def detect(infile, outfile, face_cascade_path, eye_cascade_path, show=False):
 
     # A cache so we don't need to re-open the same image
     crisu_cache = {}
@@ -108,6 +108,7 @@ def detect(infile, face_cascade_path, eye_cascade_path, show=False):
                                       alpha_l * l_img[y1:y2, x1:x2, c])
 
     cv2.imshow('img', l_img)
+    cv2.imwrite(outfile, l_img)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
@@ -121,6 +122,10 @@ if __name__ == '__main__':
     parser.add_argument(
         'infile',
         help='Image to mess up')
+    parser.add_argument(
+        '--outfile',
+        default='out.jpg',
+        help='Output image filename')
     parser.add_argument(
         '-cp', '--cascade-path',
         default='/usr/local/Cellar/opencv@2/2.4.13.5/share/OpenCV/'
@@ -142,6 +147,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     detect(args.infile,
+           args.outfile,
            os.path.join(args.cascade_path, args.face_cascade),
            os.path.join(args.cascade_path, args.eye_cascade),
            args.show)
