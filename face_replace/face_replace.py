@@ -94,7 +94,8 @@ def detect(infile, outfile, face_cascade_path, eye_cascade_path, show=False):
         # s_img = image_resize(s_img, height=h)
         s_img = image_resize(s_img, width=w)
 
-        cv2.rectangle(l_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
+        if show:
+            cv2.rectangle(l_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
         y1, y2 = y, y + s_img.shape[0]
         x1, x2 = x, x + s_img.shape[1]
@@ -141,7 +142,6 @@ if __name__ == '__main__':
         help='Haar cascade file')
     parser.add_argument(
         '-s', '--show', action='store_true',
-        default=True,
         help='Show detected image with box')
 
     args = parser.parse_args()
