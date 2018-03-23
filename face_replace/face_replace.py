@@ -47,6 +47,19 @@ def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
     return resized
 
 
+def paste_image(large, small, x1, y1, x2, y2):
+    """Paste the small image into the large image at these coordinates,
+    taking care of transparency
+    """
+    alpha_s = small[:, :, 3] / 255.0
+    alpha_l = 1.0 - alpha_s
+
+    for c in range(0, 3):
+        large[y1:y2, x1:x2, c] = (alpha_s * small[:, :, c] +
+                                  alpha_l * large[y1:y2, x1:x2, c])
+    return large
+
+
 def detect(infile, outfile, face_cascade_path, eye_cascade_path, show=False):
 
     # A cache so we don't need to re-open the same image
@@ -100,13 +113,7 @@ def detect(infile, outfile, face_cascade_path, eye_cascade_path, show=False):
         y1, y2 = y, y + s_img.shape[0]
         x1, x2 = x, x + s_img.shape[1]
 
-        # Paste the new face, taking care of transparency
-        alpha_s = s_img[:, :, 3] / 255.0
-        alpha_l = 1.0 - alpha_s
-
-        for c in range(0, 3):
-            l_img[y1:y2, x1:x2, c] = (alpha_s * s_img[:, :, c] +
-                                      alpha_l * l_img[y1:y2, x1:x2, c])
+        l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
 
     cv2.imshow('img', l_img)
     cv2.imwrite(outfile, l_img)
