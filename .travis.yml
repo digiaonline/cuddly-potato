@@ -5,6 +5,7 @@ python:
 
 install:
  - pip install pyflakes pycodestyle
+ - pip install opencv-python
 
 script:
  # Unit tests
