@@ -5,8 +5,12 @@ python:
 
 install:
  - pip install pyflakes pycodestyle
+ - pip install opencv-python
 
 script:
+ # Unit tests
+ - python face_replace/test_face_replace.py
+
  # Static analysis
  - pyflakes .
  - pycodestyle --statistics --count .
