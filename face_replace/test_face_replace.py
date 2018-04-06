@@ -44,7 +44,7 @@ class TestImagePathsDir(unittest.TestCase):
 
     def setUp(self):
         # Create a new, empty directory
-        self.dir = os.path.join(tempfile.gettempdir() + str(time.time()))
+        self.dir = os.path.join(tempfile.gettempdir(), str(time.time()))
         os.mkdir(self.dir)
 
         # Add some dummy files
@@ -70,7 +70,7 @@ class TestImagePathsEmpty(unittest.TestCase):
 
     def setUp(self):
         # Create a new, empty directory
-        self.dir = os.path.join(tempfile.gettempdir() + str(time.time()))
+        self.dir = os.path.join(tempfile.gettempdir(), str(time.time()))
         os.mkdir(self.dir)
 
     def tearDown(self):
