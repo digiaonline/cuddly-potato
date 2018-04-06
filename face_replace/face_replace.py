@@ -7,15 +7,9 @@ https://docs.opencv.org/3.3.0/d7/d8b/tutorial_py_face_detection.html
 from __future__ import print_function, unicode_literals
 import argparse
 import cv2
+import glob
 import os
 import random
-
-
-CRISUS = [
-    "/Users/hugo/github/chrisify/faces/risuhead.png",
-    "/Users/hugo/github/chrisify/faces/risuhead2.png",
-    "/Users/hugo/github/chrisify/faces/risuhead3.png",
-]
 
 
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -60,10 +54,33 @@ def paste_image(large, small, x1, y1, x2, y2):
     return large
 
 
-def detect(infile, outfile, face_cascade_path, eye_cascade_path, show=False):
+def image_paths(dir_or_filename):
+    """Given:
+     * a directory path,
+     * a path/file specification,
+     * or a single image,
+    return a list of paths to all images
+    """
+    if os.path.isdir(dir_or_filename):
+        # Create a file spec
+        dir_or_filename = os.path.join(dir_or_filename, "*")
+
+    # Find all entries that match the spec
+    filenames = glob.glob(dir_or_filename)
+
+    # Filter out directories
+    filenames = [f for f in filenames if os.path.isfile(f)]
+
+    return filenames
+
+
+def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
+           show=False):
 
     # A cache so we don't need to re-open the same image
     crisu_cache = {}
+
+    face_paths = image_paths(in_faces)
 
     face_cascade = cv2.CascadeClassifier(face_cascade_path)
     eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
@@ -83,10 +100,11 @@ def detect(infile, outfile, face_cascade_path, eye_cascade_path, show=False):
                     roi_color, (ex, ey), (ex+ew, ey+eh), (0, 255, 0), 2)
 
         # Load a Crisu head, resize it and paste it
-        random_index = random.randrange(0, len(CRISUS))
+        random_index = random.randrange(0, len(face_paths))
         # Load from cache, or put in cache
         if random_index not in crisu_cache:
-            crisu_cache[random_index] = cv2.imread(CRISUS[random_index], -1)
+            crisu_cache[random_index] = cv2.imread(face_paths[random_index],
+                                                   -1)
         s_img = crisu_cache[random_index]
 
         # 50% chance to flip the image for some variation
@@ -131,32 +149,44 @@ if __name__ == '__main__':
         'infile',
         help='Image to mess up')
     parser.add_argument(
+        '-f',
+        '--faces',
+        default='/Users/hugo/github/chrisify/faces/risuhead*.png',
+        help='Either a directory of images or a single face image')
+    parser.add_argument(
         '--outfile',
         default='out.jpg',
         help='Output image filename')
     parser.add_argument(
-        '-cp', '--cascade-path',
+        '-cp',
+        '--cascade-path',
         default='/usr/local/Cellar/opencv@2/2.4.13.5/share/OpenCV/'
                 'haarcascades',
         help='Haar cascade file')
     parser.add_argument(
-        '-fc', '--face-cascade',
+        '-fc',
+        '--face-cascade',
         default='haarcascade_frontalface_alt.xml',
         help='Haar cascade file')
     parser.add_argument(
-        '-ec', '--eye-cascade',
+        '-ec',
+        '--eye-cascade',
         default='haarcascade_eye.xml',
         help='Haar cascade file')
     parser.add_argument(
-        '-s', '--show', action='store_true',
+        '-s',
+        '--show',
+        action='store_true',
         help='Show detected image with box')
 
     args = parser.parse_args()
 
     detect(args.infile,
+           args.faces,
            args.outfile,
            os.path.join(args.cascade_path, args.face_cascade),
            os.path.join(args.cascade_path, args.eye_cascade),
-           args.show)
+           args.show,
+           )
 
 # End of file
