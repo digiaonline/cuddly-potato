@@ -11,11 +11,6 @@ import unittest
 
 import face_replace
 
-X = 10
-Y = 10
-W = 100
-H = 100
-
 
 class TestImagePaths(unittest.TestCase):
 
