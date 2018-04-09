@@ -1,3 +1,7 @@
+# DEV IGNORE #
+.idea*
+.vagrant
+
 ## GO IGNORE ##
 
 # Binaries for programs and plugins
