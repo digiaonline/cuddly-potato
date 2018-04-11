@@ -219,7 +219,7 @@ if __name__ == '__main__':
         default='haarcascade_eye.xml',
         help='Haar cascade file')
     parser.add_argument(
-        '-pb',
+        '-p',
         '--photobomb',
         action='store_true',
         help='Photobomb instead of detecting')
