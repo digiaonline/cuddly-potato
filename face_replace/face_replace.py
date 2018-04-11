@@ -75,7 +75,7 @@ def image_paths(dir_or_filename):
 
 
 def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
-           show=False):
+           show=False, boxes=False):
 
     # A cache so we don't need to re-open the same image
     crisu_cache = {}
@@ -90,7 +90,7 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
     print(faces)
     for (x, y, w, h) in faces:
-        if show:
+        if boxes:
             cv2.rectangle(l_img, (x, y), (x+w, y+h), (255, 0, 0), 2)
             roi_gray = gray[y:y+h, x:x+w]
             roi_color = l_img[y:y+h, x:x+w]
@@ -125,7 +125,7 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
         # s_img = image_resize(s_img, height=h)
         s_img = image_resize(s_img, width=w)
 
-        if show:
+        if boxes:
             cv2.rectangle(l_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
         y1, y2 = y, y + s_img.shape[0]
@@ -133,10 +133,12 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
 
         l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
 
-    cv2.imshow('img', l_img)
+    if show:
+        cv2.imshow('img', l_img)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
     cv2.imwrite(outfile, l_img)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
 
 
 if __name__ == '__main__':
@@ -177,7 +179,12 @@ if __name__ == '__main__':
         '-s',
         '--show',
         action='store_true',
-        help='Show detected image with box')
+        help='Debug: show output image in window')
+    parser.add_argument(
+        '-b',
+        '--boxes',
+        action='store_true',
+        help='Debug: draw boxes around deteted faces')
 
     args = parser.parse_args()
 
@@ -187,6 +194,7 @@ if __name__ == '__main__':
            os.path.join(args.cascade_path, args.face_cascade),
            os.path.join(args.cascade_path, args.eye_cascade),
            args.show,
+           args.boxes,
            )
 
 # End of file
