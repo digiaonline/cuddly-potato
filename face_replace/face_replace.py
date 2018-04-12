@@ -74,6 +74,48 @@ def image_paths(dir_or_filename):
     return filenames
 
 
+def random_flip(image):
+    """50% chance to flip the image for some variation"""
+    if random.random() < 0.5:
+        image = cv2.flip(image, 1)  # 1 = vertical flip
+    return image
+
+
+def show_image(image, show=False):
+    if show:
+        cv2.imshow('img', image)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+
+def photobomb(infile, in_bodies, outfile, show=False):
+    l_img = cv2.imread(infile)
+
+    body_paths = image_paths(in_bodies)
+
+    # Load a body, resize it and paste it
+    random_index = random.randrange(0, len(body_paths))
+
+    s_img = cv2.imread(body_paths[random_index], -1)
+    assert s_img is not None
+
+    s_img = random_flip(s_img)
+
+    # Top-left paste coordinates
+    x1 = random.randrange(0, l_img.shape[1] - s_img.shape[1])
+    y1 = l_img.shape[0] - s_img.shape[0]
+
+    # Bottom-right paste coordinates
+    x2 = x1 + s_img.shape[1]
+    y2 = y1 + s_img.shape[0]
+
+    l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
+
+    show_image(l_img, show)
+
+    cv2.imwrite(outfile, l_img)
+
+
 def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
            show=False, boxes=False):
 
@@ -107,9 +149,7 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
                                                    -1)
         s_img = crisu_cache[random_index]
 
-        # 50% chance to flip the image for some variation
-        if random.random() < 0.5:
-            s_img = cv2.flip(s_img, 1)  # 1 = vertical flip
+        s_img = random_flip(s_img)
 
         # Because we're detecting faces, not heads, but pasting heads,
         # we need to move the head up and left a bit, and make it bigger
@@ -128,15 +168,13 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
         if boxes:
             cv2.rectangle(l_img, (x, y), (x + w, y + h), (0, 0, 255), 2)
 
-        y1, y2 = y, y + s_img.shape[0]
-        x1, x2 = x, x + s_img.shape[1]
+        # Bottom-right paste coordinates
+        x2 = x + s_img.shape[1]
+        y2 = y + s_img.shape[0]
 
-        l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
+        l_img = paste_image(l_img, s_img, x, y, x2, y2)
 
-    if show:
-        cv2.imshow('img', l_img)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+    show_image(l_img, show)
 
     cv2.imwrite(outfile, l_img)
 
@@ -155,6 +193,11 @@ if __name__ == '__main__':
         '--faces',
         default='/Users/hugo/github/chrisify/faces/risuhead*.png',
         help='Either a directory of images or a single face image')
+    parser.add_argument(
+        '-b',
+        '--bodies',
+        default='/Users/hugo/github/chrisify/bodies/risu*.png',
+        help='Either a directory of images or a single body image')
     parser.add_argument(
         '--outfile',
         default='out.jpg',
@@ -176,25 +219,37 @@ if __name__ == '__main__':
         default='haarcascade_eye.xml',
         help='Haar cascade file')
     parser.add_argument(
+        '-p',
+        '--photobomb',
+        action='store_true',
+        help='Photobomb instead of detecting')
+    parser.add_argument(
         '-s',
         '--show',
         action='store_true',
         help='Debug: show output image in window')
     parser.add_argument(
-        '-b',
+        '-bx',
         '--boxes',
         action='store_true',
         help='Debug: draw boxes around deteted faces')
 
     args = parser.parse_args()
 
-    detect(args.infile,
-           args.faces,
-           args.outfile,
-           os.path.join(args.cascade_path, args.face_cascade),
-           os.path.join(args.cascade_path, args.eye_cascade),
-           args.show,
-           args.boxes,
-           )
+    if args.photobomb:
+        photobomb(args.infile,
+                  args.bodies,
+                  args.outfile,
+                  args.show,
+                  )
+    else:
+        detect(args.infile,
+               args.faces,
+               args.outfile,
+               os.path.join(args.cascade_path, args.face_cascade),
+               os.path.join(args.cascade_path, args.eye_cascade),
+               args.show,
+               args.boxes,
+               )
 
 # End of file
