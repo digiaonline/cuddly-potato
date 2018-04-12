@@ -174,9 +174,14 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
 
         l_img = paste_image(l_img, s_img, x, y, x2, y2)
 
+    if not len(faces):
+        print("No faces detected")
+        return False
+
     show_image(l_img, show)
 
     cv2.imwrite(outfile, l_img)
+    return True
 
 
 if __name__ == '__main__':
@@ -236,20 +241,22 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.photobomb:
-        photobomb(args.infile,
-                  args.bodies,
-                  args.outfile,
-                  args.show,
-                  )
-    else:
-        detect(args.infile,
-               args.faces,
-               args.outfile,
-               os.path.join(args.cascade_path, args.face_cascade),
-               os.path.join(args.cascade_path, args.eye_cascade),
-               args.show,
-               args.boxes,
-               )
+    detected = False
+    if not args.photobomb:
+        detected = detect(args.infile,
+                          args.faces,
+                          args.outfile,
+                          os.path.join(args.cascade_path, args.face_cascade),
+                          os.path.join(args.cascade_path, args.eye_cascade),
+                          args.show,
+                          args.boxes,
+                          )
+
+    if args.photobomb or not detected:
+            photobomb(args.infile,
+                      args.bodies,
+                      args.outfile,
+                      args.show,
+                      )
 
 # End of file
