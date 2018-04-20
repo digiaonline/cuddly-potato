@@ -228,6 +228,7 @@ if __name__ == '__main__':
         default='data/bodies/*.png',
         help='Either a directory of images or a single body image')
     parser.add_argument(
+        '-o',
         '--outfile',
         default='out.jpg',
         help='Output image filename')
