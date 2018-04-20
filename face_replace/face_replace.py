@@ -98,11 +98,19 @@ def photobomb(infile, in_bodies, outfile, show=False):
 
     # Load a body, resize it and paste it
     random_index = random.randrange(0, len(body_paths))
+    print(body_paths[random_index])
 
     s_img = cv2.imread(body_paths[random_index], -1)
     assert s_img is not None
 
     s_img = random_flip(s_img)
+
+    # Resize photobomber to a fraction of full image width
+    s_img = image_resize(s_img, width=int(l_img.shape[1] * 0.5))
+
+    # And make sure photobomber is no taller than the full image
+    if s_img.shape[0] > l_img.shape[0]:
+        s_img = image_resize(s_img, height=int(l_img.shape[0] * 0.8))
 
     # Top-left paste coordinates
     x1 = random.randrange(0, l_img.shape[1] - s_img.shape[1])
@@ -146,6 +154,8 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
 
         # Load a Crisu head, resize it and paste it
         random_index = random.randrange(0, len(face_paths))
+        print(face_paths[random_index])
+
         # Load from cache, or put in cache
         if random_index not in crisu_cache:
             crisu_cache[random_index] = cv2.imread(face_paths[random_index],
