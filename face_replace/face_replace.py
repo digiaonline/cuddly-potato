@@ -196,12 +196,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '-f',
         '--faces',
-        default='/Users/hugo/github/chrisify/faces/risuhead*.png',
+        default='data/faces/*.png',
         help='Either a directory of images or a single face image')
     parser.add_argument(
         '-b',
         '--bodies',
-        default='/Users/hugo/github/chrisify/bodies/risu*.png',
+        default='data/bodies/*.png',
         help='Either a directory of images or a single body image')
     parser.add_argument(
         '--outfile',
