@@ -45,6 +45,17 @@ def paste_image(large, small, x1, y1, x2, y2):
     """Paste the small image into the large image at these coordinates,
     taking care of transparency
     """
+    # Crop any bits of small extending beyond large's edges
+    if y2 > large.shape[0]:
+        y2 = large.shape[0]
+        # Reduce height. No change to width.
+        small = small[0:y2 - y1, 0:small.shape[1]]
+
+    if x2 > large.shape[1]:
+        x2 = large.shape[1]
+        # No change to height. Reduce width.
+        small = small[0:small.shape[0], 0:x2 - x1]
+
     alpha_s = small[:, :, 3] / 255.0
     alpha_l = 1.0 - alpha_s
 
