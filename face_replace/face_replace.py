@@ -61,6 +61,9 @@ def image_paths(dir_or_filename):
      * or a single image,
     return a list of paths to all images
     """
+    # Expand any "~"
+    dir_or_filename = os.path.expanduser(dir_or_filename)
+
     if os.path.isdir(dir_or_filename):
         # Create a file spec
         dir_or_filename = os.path.join(dir_or_filename, "*")
