@@ -5,6 +5,7 @@ Find faces in an input image and replace them with other random faces
 https://docs.opencv.org/3.3.0/d7/d8b/tutorial_py_face_detection.html
 """
 from __future__ import print_function, unicode_literals
+from os.path import realpath, normpath
 import argparse
 import cv2
 import glob
@@ -220,12 +221,12 @@ if __name__ == '__main__':
     parser.add_argument(
         '-f',
         '--faces',
-        default='data/faces/*.png',
+        default=normpath(realpath(__file__) + '/../data/faces/*.png'),
         help='Either a directory of images or a single face image')
     parser.add_argument(
         '-b',
         '--bodies',
-        default='data/bodies/*.png',
+        default=normpath(realpath(__file__) + '/../data/bodies/*.png'),
         help='Either a directory of images or a single body image')
     parser.add_argument(
         '-o',
@@ -235,8 +236,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '-cp',
         '--cascade-path',
-        default='/usr/local/Cellar/opencv@2/2.4.13.5/share/OpenCV/'
-                'haarcascades',
+        default=normpath(realpath(cv2.__file__) + '/../data/'),
         help='Haar cascade file')
     parser.add_argument(
         '-fc',
