@@ -1,3 +1,4 @@
+// Inspiration from http://blog.zikes.me/post/how-i-ruined-office-productivity-with-a-slack-bot/
 package main
 
 import (
@@ -12,25 +13,31 @@ import (
 	"time"
 	"io/ioutil"
 	"os/exec"
-	"bytes"
 )
 
 var (
-	botToken string
-	faceSwapExec string
+	botToken           string
+	faceSwapperCommand string
 )
 
+// Start thg slackbot and listen to messages where this bot is mentioned
 func main() {
 	var (
 		isDebug  bool
 	)
 
 	flag.StringVar(&botToken, "token", "", "Your SlackBot Token")
+	flag.StringVar(&faceSwapperCommand, "faceSwapper", "", "The command to use for swapping out faces. Should take the input file as an argument")
 	flag.BoolVar(&isDebug, "debug", false, "Debug")
 	flag.Parse()
 
 	if botToken == "" {
 		fmt.Println("Slack SlackBot token cannot be empty")
+		return
+	}
+
+	if faceSwapperCommand == "" {
+		fmt.Println("No face swapper command detected")
 		return
 	}
 
@@ -44,17 +51,18 @@ func main() {
 	rtm := api.NewRTM()
 	go rtm.ManageConnection()
 
+	// Listen for real-time-messages
 	for msg := range rtm.IncomingEvents {
-		//fmt.Print("Event Received: ")
 		switch ev := msg.Data.(type) {
 		case *slack.MessageEvent:
 			info := rtm.GetInfo()
 			botId := fmt.Sprintf("<@%s>", info.User.ID)
 
+			// If the posting user is _not_ the bot, the message is a file_share, and the file is an image then process it
 			if ev.User != info.User.ID && strings.Contains(ev.Text, botId) && ev.SubType == "file_share" {
-				isFileAllowed, _ := inArray(ev.File.Filetype, fileTypes)
+				index := inArray(ev.File.Filetype, fileTypes)
 
-				if isFileAllowed {
+				if index > -1 {
 					// Handle the file
 					handleFile(rtm, ev)
 				}
@@ -73,8 +81,9 @@ func main() {
 	}
 }
 
-func inArray(val interface{}, array interface{}) (exists bool, index int) {
-	exists = false
+// Checks if the value is in the passed array
+// Returns -1 if not found, else the index of the array
+func inArray(val interface{}, array interface{}) (index int) {
 	index = -1
 
 	switch reflect.TypeOf(array).Kind() {
@@ -84,7 +93,6 @@ func inArray(val interface{}, array interface{}) (exists bool, index int) {
 		for i := 0; i < s.Len(); i++ {
 			if reflect.DeepEqual(val, s.Index(i).Interface()) == true {
 				index = i
-				exists = true
 				return
 			}
 		}
@@ -93,21 +101,34 @@ func inArray(val interface{}, array interface{}) (exists bool, index int) {
 	return
 }
 
+// Download the image from Slack and pass it to the face swapper
+// Upload the manipulated image back to slack
 func handleFile(rtm *slack.RTM, ev *slack.MessageEvent) {
 	// Download image from private url to temp file
 	file := SaveTempFile(GetFile(ev.File))
 
+	defer os.Remove(file.Name()) // clean up
+
 	// Pass the temp file to the face recognition executable
 	swappedFile := FaceSwap(file)
+
+	defer os.Remove(swappedFile.Name()) // clean up
 
 	// Get resulting image and upload it to the channel
 	params := slack.FileUploadParameters{
 		Title: "Foo",
-		Reader: bytes.NewReader(swappedFile),
+		Reader: swappedFile,
+		Filename: "foo",
+		Channels: []string{ev.Channel},
 	}
-	rtm.UploadFile(params)
+	uploaded, err := rtm.UploadFile(params)
+
+	if uploaded == nil && err != nil {
+		log.Fatalf("error uploading file\n%v", err)
+	}
 }
 
+// Download a file from Slack
 func GetFile(file *slack.File) []byte {
 	client := &http.Client{
 		Timeout: time.Second * 20,
@@ -132,7 +153,8 @@ func GetFile(file *slack.File) []byte {
 	return body
 }
 
-func SaveTempFile(b []byte) string {
+// Saves the downloaded file to a temporary file and returns it
+func SaveTempFile(b []byte) *os.File {
 	file, err := ioutil.TempFile("", "slack_image")
 	if err != nil {
 		log.Fatalf("error saving file: %s", err)
@@ -143,14 +165,37 @@ func SaveTempFile(b []byte) string {
 	if err = file.Close(); err != nil {
 		log.Fatalf("error closing file: %s", err)
 	}
-	return file.Name()
+	return file
 }
 
-func FaceSwap(file string) []byte {
-	out, err := exec.Command(faceSwapExec, file).Output()
+// Swap the faces using the face swapper command
+func FaceSwap(file *os.File) *os.File {
+	tmpFile, err := ioutil.TempFile("", "slack_image")
 	if err != nil {
-		log.Fatalf("Coulnd't swap faces: %s %s", file, err)
+		log.Fatalf("error saving file: %s", err)
 	}
 
-	return out
+	defer os.Remove(tmpFile.Name()) // clean up
+
+	// Stupid TempFile cannot be prefixed
+	outName := tmpFile.Name() + ".png"
+
+	err = os.Rename(tmpFile.Name(), outName)
+	if err != nil {
+		log.Fatalf("error renaming file: %s", err)
+	}
+
+	cmd := exec.Command("python", faceSwapperCommand, file.Name(), "-o", outName)
+
+	outFile, err := os.Open(outName)
+	if err != nil {
+		log.Fatalf("error opening the file: %s", err)
+	}
+
+	err = cmd.Run()
+	if err != nil {
+		log.Fatalf("Coulnd't swap faces: %s %s", file.Name(), err)
+	}
+
+	return outFile
 }
