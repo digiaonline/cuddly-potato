@@ -72,11 +72,9 @@ class TestImagePathsEmpty(unittest.TestCase):
         os.rmdir(self.dir)
 
     def test_empty_dir(self):
-        # Act
-        output = face_replace.image_paths(self.dir)
-
-        # Assert
-        self.assertEqual(output, [])
+        # Act / Assert
+        with self.assertRaises(OSError):
+            face_replace.image_paths(self.dir)
 
 
 if __name__ == '__main__':

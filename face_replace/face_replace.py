@@ -10,7 +10,6 @@ import cv2
 import glob
 import os
 import random
-import sys
 
 
 def image_resize(image, width=None, height=None, inter=cv2.INTER_AREA):
@@ -85,6 +84,9 @@ def image_paths(dir_or_filename):
 
     # Filter out directories
     filenames = [f for f in filenames if os.path.isfile(f)]
+
+    if len(filenames) == 0:
+        raise OSError("No images found at {}".format(dir_or_filename))
 
     return filenames
 
@@ -213,7 +215,7 @@ def check_path(path, filename):
     """Return full path if there's a file at the given path, else exit"""
     full_path = os.path.join(path, filename)
     if not os.path.isfile(full_path):
-        sys.exit("File not found: {}".format(full_path))
+        raise OSError("File not found: {}".format(full_path))
     return full_path
 
 
