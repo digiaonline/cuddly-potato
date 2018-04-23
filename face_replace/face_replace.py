@@ -86,6 +86,9 @@ def image_paths(dir_or_filename):
     # Filter out directories
     filenames = [f for f in filenames if os.path.isfile(f)]
 
+    if len(filenames) == 0:
+        raise OSError("No images found at {}".format(dir_or_filename))
+
     return filenames
 
 
@@ -209,6 +212,14 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
     return True
 
 
+def check_path(path, filename):
+    """Return full path if there's a file at the given path, else exit"""
+    full_path = os.path.join(path, filename)
+    if not os.path.isfile(full_path):
+        raise OSError("File not found: {}".format(full_path))
+    return full_path
+
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
@@ -271,8 +282,8 @@ if __name__ == '__main__':
         detected = detect(args.infile,
                           args.faces,
                           args.outfile,
-                          os.path.join(args.cascade_path, args.face_cascade),
-                          os.path.join(args.cascade_path, args.eye_cascade),
+                          check_path(args.cascade_path, args.face_cascade),
+                          check_path(args.cascade_path, args.eye_cascade),
                           args.show,
                           args.boxes,
                           )
