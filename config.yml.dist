@@ -1,0 +1,9 @@
+slack:
+  token: ~
+
+pyswapper:
+  paths:
+    executable: face_replace/face_replace.py
+    faces:      face_replace/data/faces/*.png
+    bodies:     face_replace/data/bodies/*.png
+    success:    face_replace/data/bodies/bruce.png

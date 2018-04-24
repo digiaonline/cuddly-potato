@@ -4,7 +4,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/nlopes/slack"
 	"log"
 	"os"
 	"strings"
@@ -12,36 +11,49 @@ import (
 	"net/http"
 	"time"
 	"io/ioutil"
-	"os/exec"
+	"github.com/nlopes/slack"
+	"../github.com/digiaonline/faceswapbot"
+	"github.com/spf13/viper"
 )
 
 var (
-	botToken           string
-	faceSwapperCommand string
+	botToken    string
+	faceSwapper faceswapbot.FaceReplacer
 )
 
 // Start thg slackbot and listen to messages where this bot is mentioned
 func main() {
 	var (
-		isDebug  bool
+		config  string
+		isDebug bool
 	)
 
-	flag.StringVar(&botToken, "token", "", "Your SlackBot Token")
-	flag.StringVar(&faceSwapperCommand, "faceSwapper", "", "The command to use for swapping out faces. Should take the input file as an argument")
+	//flag.StringVar(&botToken, "token", "", "Your SlackBot Token")
+	flag.StringVar(&config, "config", "", "Config file")
 	flag.BoolVar(&isDebug, "debug", false, "Debug")
 	flag.Parse()
 
+	viper.SetConfigFile(config)
+	err := viper.ReadInConfig()
+	if err != nil { // Handle errors reading the config file
+		panic(fmt.Errorf("Fatal error config file: %s \n", err))
+	}
+
+	botToken = viper.GetString("slack.token")
+
 	if botToken == "" {
-		fmt.Println("Slack SlackBot token cannot be empty")
-		return
+		panic(fmt.Errorf("Slack token cannot be empty\n"))
 	}
 
-	if faceSwapperCommand == "" {
-		fmt.Println("No face swapper command detected")
-		return
+	faceSwapper = faceswapbot.PySwapper{
+		Executable:  viper.GetString("pyswapper.paths.executable"),
+		FacesPath:   viper.GetString("pyswapper.paths.faces"),
+		BodiesPath:  viper.GetString("pyswapper.paths.bodies"),
+		SuccessPath: viper.GetString("pyswapper.paths.success"),
 	}
 
-	fileTypes := []string{"jpg", "png"}
+	// Todo: should come from config allow images by some other method
+	fileTypes := []string{"jpg", "png", "gif"}
 
 	api := slack.New(botToken)
 	logger := log.New(os.Stdout, "slack-bot: ", log.Lshortfile|log.LstdFlags)
@@ -59,12 +71,34 @@ func main() {
 			botId := fmt.Sprintf("<@%s>", info.User.ID)
 
 			// If the posting user is _not_ the bot, the message is a file_share, and the file is an image then process it
-			if ev.User != info.User.ID && strings.Contains(ev.Text, botId) && ev.SubType == "file_share" {
-				index := inArray(ev.File.Filetype, fileTypes)
+			if ev.User != info.User.ID && strings.Contains(ev.Text, botId) {
+				if ev.SubType == "file_share" {
+					index := inArray(ev.File.Filetype, fileTypes)
 
-				if index > -1 {
-					// Handle the file
-					handleFile(rtm, ev)
+					// If the file is of supported type
+					if index > -1 {
+						// Handle the file
+						if strings.Contains(strings.ToLower(ev.Text), "bomb") {
+							handleFile(rtm, ev, "bomb")
+						} else if strings.Contains(strings.ToLower(ev.Text), "success") {
+							handleFile(rtm, ev, "success")
+						} else {
+							handleFile(rtm, ev, "")
+						}
+					} else {
+						rtm.SendMessage(rtm.NewOutgoingMessage(
+							"Supported file types are: " + strings.Join(fileTypes, ", "),
+							ev.Channel,
+						))
+					}
+				} else if strings.Contains(strings.ToLower(ev.Text), "help") {
+					rtm.SendMessage(rtm.NewOutgoingMessage(
+						"Available commands are:\n"+
+							"No parameters for face swapping purpouses :facepalm:\n"+
+							"`bomb` to explicitly photobomb the image :bomb:\n"+
+							"`success` to _successify_ the image :success:",
+						ev.Channel,
+					))
 				}
 			}
 
@@ -103,21 +137,35 @@ func inArray(val interface{}, array interface{}) (index int) {
 
 // Download the image from Slack and pass it to the face swapper
 // Upload the manipulated image back to slack
-func handleFile(rtm *slack.RTM, ev *slack.MessageEvent) {
+func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string) {
 	// Download image from private url to temp file
 	file := SaveTempFile(GetFile(ev.File))
 
 	defer os.Remove(file.Name()) // clean up
 
+	var swappedFile *os.File
+	var err error
+
 	// Pass the temp file to the face recognition executable
-	swappedFile := FaceSwap(file)
+	switch command {
+	case "success":
+		swappedFile, err = faceSwapper.Success(file)
+	case "bomb":
+		swappedFile, err = faceSwapper.PhotoBomb(file)
+	default:
+		swappedFile, err = faceSwapper.SwapFaces(file)
+	}
+
+	if err != nil {
+		log.Fatalf("error swapping faces: %s", err)
+	}
 
 	defer os.Remove(swappedFile.Name()) // clean up
 
 	// Get resulting image and upload it to the channel
 	params := slack.FileUploadParameters{
-		Title: "Foo",
-		Reader: swappedFile,
+		Title:    "Foo",
+		Reader:   swappedFile,
 		Filename: "foo",
 		Channels: []string{ev.Channel},
 	}
@@ -166,36 +214,4 @@ func SaveTempFile(b []byte) *os.File {
 		log.Fatalf("error closing file: %s", err)
 	}
 	return file
-}
-
-// Swap the faces using the face swapper command
-func FaceSwap(file *os.File) *os.File {
-	tmpFile, err := ioutil.TempFile("", "slack_image")
-	if err != nil {
-		log.Fatalf("error saving file: %s", err)
-	}
-
-	defer os.Remove(tmpFile.Name()) // clean up
-
-	// Stupid TempFile cannot be prefixed
-	outName := tmpFile.Name() + ".png"
-
-	err = os.Rename(tmpFile.Name(), outName)
-	if err != nil {
-		log.Fatalf("error renaming file: %s", err)
-	}
-
-	cmd := exec.Command("python", faceSwapperCommand, file.Name(), "-o", outName)
-
-	outFile, err := os.Open(outName)
-	if err != nil {
-		log.Fatalf("error opening the file: %s", err)
-	}
-
-	err = cmd.Run()
-	if err != nil {
-		log.Fatalf("Coulnd't swap faces: %s %s", file.Name(), err)
-	}
-
-	return outFile
 }

@@ -1,6 +1,7 @@
 # DEV IGNORE #
 .idea*
 .vagrant
+config.yml
 
 ## GO IGNORE ##
 
