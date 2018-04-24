@@ -1,19 +1,25 @@
-language: python
-
-python:
- - "3.6"
-
-install:
- - pip install pyflakes pycodestyle
- - pip install opencv-python
-
-script:
- # Unit tests
- - python face_replace/test_face_replace.py
-
- # Static analysis
- - pyflakes .
- - pycodestyle --statistics --count .
-
 matrix:
   fast_finish: true
+  include:
+
+    - language: python
+      python: "3.6"
+
+      install:
+       - pip install pyflakes pycodestyle
+       - pip install opencv-python
+
+      script:
+       # Unit tests
+       - python face_replace/test_face_replace.py
+
+       # Static analysis
+       - pyflakes .
+       - pycodestyle --statistics --count .
+
+    - language: go
+      go: "1.10"
+
+      script:
+        # TODO replace this
+        - go version
