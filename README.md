@@ -27,6 +27,7 @@ Hammertime!
 
     ```
     $ go get -u github.com/nlopes/slack
+    $ go get -u github.com/spf13/viper
     ```
     
 3. Build the bot
@@ -36,8 +37,22 @@ Hammertime!
     $ go build
     ```
 
-4. Run the bot
+4. Create the `config.yml` file
+
+    ```yaml
+    slack:
+      token: BOT-TOKEN
+    
+    pyswapper:
+      paths:
+        executable: /path/to/face_replace/face_replace.py
+        faces:      /path/to/faces/*.png
+        bodies:     /path/to/bodies/*.png
+        success:    /path/to/success.png OR /path/to/success/*.png
+    ```
+
+5. Run the bot
 
     ```
-    ./faceswapbot -token [BOT_TOKEN] -faceSwapper [/path/to/face_replace.py]
+    /path/to/faceswapbot -config /path/to/config.yml
     ```
