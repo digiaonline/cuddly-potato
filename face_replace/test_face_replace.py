@@ -26,7 +26,7 @@ class TestImagePaths(unittest.TestCase):
 
     def test_spec(self):
         # Arrange
-        spec = "*.md"
+        spec = "README*.md"
 
         # Act
         output = face_replace.image_paths(spec)
