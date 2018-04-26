@@ -4,6 +4,7 @@ import (
 	"os"
 	"io/ioutil"
 	"os/exec"
+	"path/filepath"
 )
 
 type PySwapper struct {
@@ -13,23 +14,25 @@ type PySwapper struct {
 	SuccessPath string
 }
 
+// A stupid method to get a like suffixed temporary files name
+func getTempFileName(f *os.File) (string, error) {
+	tmpFile, err := ioutil.TempFile("", "slack_image")
+	if err != nil {
+		return "", err
+	}
+
+	defer os.Remove(tmpFile.Name())
+
+	return tmpFile.Name() + filepath.Ext(f.Name()), nil
+}
+
 // Swaps any faces found in the original image
 // Photobomb if no faces found (implementation specifics)
 func (a PySwapper) SwapFaces(orig *os.File) (*os.File, error) {
-	tmpFile, err := ioutil.TempFile("", "slack_image")
+	outName, err := getTempFileName(orig)
 	if err != nil {
 		return nil, err
 	}
-
-	// Stupid TempFile cannot be prefixed
-	outName := tmpFile.Name() + ".png"
-
-	err = os.Rename(tmpFile.Name(), outName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer os.Remove(outName) // clean up
 
 	cmd := exec.Command(
 		"python",
@@ -58,20 +61,10 @@ func (a PySwapper) SwapFaces(orig *os.File) (*os.File, error) {
 
 // Photobomb image regardless of found faces
 func (a PySwapper) PhotoBomb(orig *os.File) (*os.File, error) {
-	tmpFile, err := ioutil.TempFile("", "slack_image")
+	outName, err := getTempFileName(orig)
 	if err != nil {
 		return nil, err
 	}
-
-	// Stupid TempFile cannot be prefixed
-	outName := tmpFile.Name() + ".png"
-
-	err = os.Rename(tmpFile.Name(), outName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer os.Remove(outName) // clean up
 
 	cmd := exec.Command(
 		"python",
@@ -101,20 +94,10 @@ func (a PySwapper) PhotoBomb(orig *os.File) (*os.File, error) {
 
 // Photobomb with the success image
 func (a PySwapper) Success(orig *os.File) (*os.File, error) {
-	tmpFile, err := ioutil.TempFile("", "slack_image")
+	outName, err := getTempFileName(orig)
 	if err != nil {
 		return nil, err
 	}
-
-	// Stupid TempFile cannot be prefixed
-	outName := tmpFile.Name() + ".png"
-
-	err = os.Rename(tmpFile.Name(), outName)
-	if err != nil {
-		return nil, err
-	}
-
-	defer os.Remove(outName) // clean up
 
 	cmd := exec.Command(
 		"python",

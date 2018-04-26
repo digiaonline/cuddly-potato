@@ -43,6 +43,8 @@ Hammertime!
     slack:
       token: BOT-TOKEN
     
+    filenames: /path/to/names.txt
+    
     pyswapper:
       paths:
         executable: /path/to/face_replace/face_replace.py

@@ -1,6 +1,8 @@
 slack:
   token: ~
 
+filenames: data/names.txt
+
 pyswapper:
   paths:
     executable: face_replace/face_replace.py
