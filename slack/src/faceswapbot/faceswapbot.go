@@ -99,7 +99,7 @@ func main() {
 				} else if strings.Contains(strings.ToLower(ev.Text), "help") {
 					rtm.SendMessage(rtm.NewOutgoingMessage(
 						"Available commands are:\n"+
-							"No parameters for face swapping purpouses :facepalm:\n"+
+							"No parameters for face swapping purposes :facepalm:\n"+
 							"`bomb` to explicitly photobomb the image :bomb:\n"+
 							"`success` to _successify_ the image :success:",
 						ev.Channel,
