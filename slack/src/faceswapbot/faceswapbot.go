@@ -14,6 +14,11 @@ import (
 	"github.com/nlopes/slack"
 	"../github.com/digiaonline/faceswapbot"
 	"github.com/spf13/viper"
+	"io"
+	"bytes"
+	"math/rand"
+	"bufio"
+	"path/filepath"
 )
 
 var (
@@ -24,8 +29,8 @@ var (
 // Start thg slackbot and listen to messages where this bot is mentioned
 func main() {
 	var (
-		config  string
-		isDebug bool
+		config    string
+		isDebug   bool
 	)
 
 	//flag.StringVar(&botToken, "token", "", "Your SlackBot Token")
@@ -78,16 +83,16 @@ func main() {
 					// If the file is of supported type
 					if index > -1 {
 						// Handle the file
-						if strings.Contains(strings.ToLower(ev.Text), "bomb") {
+						if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BOMB") {
 							handleFile(rtm, ev, "bomb")
-						} else if strings.Contains(strings.ToLower(ev.Text), "success") {
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "SUCCESS") {
 							handleFile(rtm, ev, "success")
 						} else {
 							handleFile(rtm, ev, "")
 						}
 					} else {
 						rtm.SendMessage(rtm.NewOutgoingMessage(
-							"Supported file types are: " + strings.Join(fileTypes, ", "),
+							"Supported file types are: "+strings.Join(fileTypes, ", "),
 							ev.Channel,
 						))
 					}
@@ -138,13 +143,25 @@ func inArray(val interface{}, array interface{}) (index int) {
 // Download the image from Slack and pass it to the face swapper
 // Upload the manipulated image back to slack
 func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string) {
-	// Download image from private url to temp file
-	file := SaveTempFile(GetFile(ev.File))
-
-	defer os.Remove(file.Name()) // clean up
-
 	var swappedFile *os.File
 	var err error
+
+	// Download image from private url to temp file
+	file := saveTempFile(getFileData(ev.File))
+	tempFileName := file.Name() + "." + ev.File.Filetype
+	err = os.Rename(file.Name(), tempFileName)
+	if err != nil {
+		rtm.SendMessage(rtm.NewOutgoingMessage(
+			":robot_face: + :bug: :arrow_right: :feelsgood:, plz contact your local IT support for support :troll:",
+			ev.Channel,
+		))
+		log.Printf("error swapping faces: %s\n", err)
+		return
+	}
+
+	file, _ = os.Open(tempFileName)
+
+	defer os.Remove(tempFileName) // clean up
 
 	// Pass the temp file to the face recognition executable
 	switch command {
@@ -157,16 +174,23 @@ func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string) {
 	}
 
 	if err != nil {
-		log.Fatalf("error swapping faces: %s", err)
+		rtm.SendMessage(rtm.NewOutgoingMessage(
+			":robot_face: + :bug: :arrow_right: :feelsgood:, plz contact your local IT support for support :troll:",
+			ev.Channel,
+		))
+		log.Printf("error swapping faces: %s\n", err)
+		return
 	}
 
 	defer os.Remove(swappedFile.Name()) // clean up
 
+	fileName, _ := getRandomFileName()
+
 	// Get resulting image and upload it to the channel
 	params := slack.FileUploadParameters{
-		Title:    "Foo",
+		Title:    fileName,
 		Reader:   swappedFile,
-		Filename: "foo",
+		Filename: fileName + filepath.Ext(swappedFile.Name()),
 		Channels: []string{ev.Channel},
 	}
 	uploaded, err := rtm.UploadFile(params)
@@ -176,8 +200,8 @@ func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string) {
 	}
 }
 
-// Download a file from Slack
-func GetFile(file *slack.File) []byte {
+// Download a file from Slack and return its content
+func getFileData(file *slack.File) []byte {
 	client := &http.Client{
 		Timeout: time.Second * 20,
 	}
@@ -202,7 +226,7 @@ func GetFile(file *slack.File) []byte {
 }
 
 // Saves the downloaded file to a temporary file and returns it
-func SaveTempFile(b []byte) *os.File {
+func saveTempFile(b []byte) *os.File {
 	file, err := ioutil.TempFile("", "slack_image")
 	if err != nil {
 		log.Fatalf("error saving file: %s", err)
@@ -214,4 +238,60 @@ func SaveTempFile(b []byte) *os.File {
 		log.Fatalf("error closing file: %s", err)
 	}
 	return file
+}
+
+// Get a random file name
+func getRandomFileName() (string, error) {
+	var (
+		line string
+	)
+
+	//_, filename, _, _ := runtime.Caller(0)
+	//file, _ := os.Open(path.Join(path.Dir(filename), "/data/names.txt"))
+	file, _ := os.Open(viper.GetString("filenames"))
+	defer file.Close()
+
+	numberOfLines, _ := lineCounter(file)
+
+	randLineNumber := random(0, numberOfLines-1)
+
+	file.Seek(0, 0)
+	scanner := bufio.NewScanner(file)
+
+	i := 0
+	for scanner.Scan() {
+		line = scanner.Text()
+		if i >= randLineNumber && line != "" {
+			return line, nil
+		}
+		i++
+	}
+
+	return "", scanner.Err()
+}
+
+// https://stackoverflow.com/questions/24562942/golang-how-do-i-determine-the-number-of-lines-in-a-file-efficiently
+func lineCounter(r io.Reader) (int, error) {
+	buf := make([]byte, 32*1024)
+	count := 0
+	lineSep := []byte{'\n'}
+
+	for {
+		c, err := r.Read(buf)
+		count += bytes.Count(buf[:c], lineSep)
+
+		switch {
+		case err == io.EOF:
+			return count, nil
+
+		case err != nil:
+			return count, err
+		}
+	}
+}
+
+// http://golangcookbook.blogspot.fi/2012/11/generate-random-number-in-given-range.html
+func random(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max-min) + min
 }
