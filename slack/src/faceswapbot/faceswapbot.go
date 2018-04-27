@@ -97,7 +97,8 @@ func main() {
 						))
 					}
 				} else if strings.HasSuffix(strings.ToLower(ev.Text), "help") ||
-						  strings.HasSuffix(strings.ToLower(ev.Text), "hjalp") {
+						  strings.HasSuffix(strings.ToLower(ev.Text), "hjalp") ||
+						  strings.HasSuffix(strings.ToLower(ev.Text), "hilfe") {
 					rtm.SendMessage(rtm.NewOutgoingMessage(
 						"Available commands are:\n"+
 							"No parameters for face swapping purposes :facepalm:\n"+
