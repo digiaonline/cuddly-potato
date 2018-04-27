@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"os/exec"
 	"path/filepath"
+	"bytes"
+	"log"
 )
 
 type PySwapper struct {
@@ -23,7 +25,27 @@ func getTempFileName(f *os.File) (string, error) {
 
 	defer os.Remove(tmpFile.Name())
 
-	return tmpFile.Name() + filepath.Ext(f.Name()), nil
+	// The python face_swapper does not support outputting gifs... yet
+	fileExt := filepath.Ext(f.Name())
+	if fileExt == ".gif" {
+		fileExt = ".png"
+	}
+
+	return tmpFile.Name() + fileExt, nil
+}
+
+// Run the given command and get the stdout and stderror as strings
+func runCommand(cmd *exec.Cmd) (stdout, stderr string, err error) {
+	var outbuf, errbuf bytes.Buffer
+
+	cmd.Stdout = &outbuf
+	cmd.Stderr = &errbuf
+
+	err = cmd.Run()
+	stdout = outbuf.String()
+	stderr = errbuf.String()
+
+	return
 }
 
 // Swaps any faces found in the original image
@@ -46,8 +68,9 @@ func (a PySwapper) SwapFaces(orig *os.File) (*os.File, error) {
 		outName,
 	)
 
-	err = cmd.Run()
+	_, stdErr, err := runCommand(cmd)
 	if err != nil {
+		log.Printf(stdErr)
 		return nil, err
 	}
 
@@ -79,8 +102,9 @@ func (a PySwapper) PhotoBomb(orig *os.File) (*os.File, error) {
 		outName,
 	)
 
-	err = cmd.Run()
+	_, stdErr, err := runCommand(cmd)
 	if err != nil {
+		log.Printf(stdErr)
 		return nil, err
 	}
 
@@ -112,8 +136,9 @@ func (a PySwapper) Success(orig *os.File) (*os.File, error) {
 		outName,
 	)
 
-	err = cmd.Run()
+	_, stdErr, err := runCommand(cmd)
 	if err != nil {
+		log.Printf(stdErr)
 		return nil, err
 	}
 
