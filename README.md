@@ -9,10 +9,10 @@ Hammertime!
 ### Python stuff
 
 1. Install Python 3.6 (or later)
-2. Install OpenCV:
+2. Install OpenCV (and optionally imageio to support GIF):
 
    ```
-   pip3 install opencv-python
+   pip3 install opencv-python imageio
    ```
 
 
