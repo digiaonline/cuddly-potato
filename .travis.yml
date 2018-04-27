@@ -21,5 +21,6 @@ matrix:
       go: "1.10"
 
       script:
-        # TODO replace this
-        - go version
+        # Error if it's possible to fix formatting.
+        # Fix with 'gofmt -w .' and check in.
+        - ! gofmt -l . 2>&1 | read
