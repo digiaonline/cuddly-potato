@@ -127,3 +127,9 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# Default Python output image
+out.jpg
+
+# Go executable
+slack/src/faceswapbot/faceswapbot
