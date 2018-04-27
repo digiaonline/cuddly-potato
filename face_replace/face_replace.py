@@ -112,11 +112,8 @@ def open_image(infile):
         gif = imageio.mimread(infile)
         print("GIF frames: {}".format(len(gif)))
 
-        # Convert form RGB to BGR
-        imgs = [cv2.cvtColor(img, cv2.COLOR_RGB2BGR) for img in gif]
-
-        # Take the first frame
-        img = imgs[0]
+        # Convert first frame form RGB to BGR
+        img = cv2.cvtColor(gif[0], cv2.COLOR_RGB2BGR)
     else:
         img = cv2.imread(infile)
 
