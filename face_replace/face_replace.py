@@ -99,15 +99,29 @@ def random_flip(image):
     return image
 
 
-def show_image(image, show=False):
-    if show:
-        cv2.imshow('img', image)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+def show_image(image):
+    cv2.imshow('img', image)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+
+def open_image(infile):
+    if infile.endswith(".gif"):
+        #  No native GIF support in Open CV
+        import imageio
+        gif = imageio.mimread(infile)
+        print("GIF frames: {}".format(len(gif)))
+
+        # Convert first frame form RGB to BGR
+        img = cv2.cvtColor(gif[0], cv2.COLOR_RGB2BGR)
+    else:
+        img = cv2.imread(infile)
+
+    return img
 
 
 def photobomb(infile, in_bodies, outfile, show=False):
-    l_img = cv2.imread(infile)
+    l_img = open_image(infile)
 
     body_paths = image_paths(in_bodies)
 
@@ -137,7 +151,8 @@ def photobomb(infile, in_bodies, outfile, show=False):
 
     l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
 
-    show_image(l_img, show)
+    if show:
+        show_image(l_img)
 
     cv2.imwrite(outfile, l_img)
 
@@ -152,7 +167,8 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
 
     face_cascade = cv2.CascadeClassifier(face_cascade_path)
     eye_cascade = cv2.CascadeClassifier(eye_cascade_path)
-    l_img = cv2.imread(infile)
+    l_img = open_image(infile)
+
     gray = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
 
     faces = face_cascade.detectMultiScale(gray, 1.3, 5)
@@ -206,7 +222,8 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
         print("No faces detected")
         return False
 
-    show_image(l_img, show)
+    if show:
+        show_image(l_img)
 
     cv2.imwrite(outfile, l_img)
     return True
