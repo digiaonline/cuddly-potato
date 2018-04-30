@@ -50,14 +50,13 @@ func runCommand(cmd *exec.Cmd) (stdout, stderr string, err error) {
 
 // Swaps any faces found in the original image
 // Photobomb if no faces found (implementation specifics)
-func (a PySwapper) SwapFaces(orig *os.File) (*os.File, error) {
+func (a PySwapper) SwapFaces(orig *os.File, bw bool) (*os.File, error) {
 	outName, err := getTempFileName(orig)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command(
-		"python",
+	args := []string{
 		a.Executable,
 		orig.Name(),
 		"-f",
@@ -66,6 +65,15 @@ func (a PySwapper) SwapFaces(orig *os.File) (*os.File, error) {
 		a.BodiesPath,
 		"-o",
 		outName,
+	}
+
+	if true == bw {
+		args = append(args, "-bw")
+	}
+
+	cmd := exec.Command(
+		"python",
+		args...
 	)
 
 	_, stdErr, err := runCommand(cmd)
@@ -83,14 +91,13 @@ func (a PySwapper) SwapFaces(orig *os.File) (*os.File, error) {
 }
 
 // Photobomb image regardless of found faces
-func (a PySwapper) PhotoBomb(orig *os.File) (*os.File, error) {
+func (a PySwapper) PhotoBomb(orig *os.File, bw bool) (*os.File, error) {
 	outName, err := getTempFileName(orig)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command(
-		"python",
+	args := []string{
 		a.Executable,
 		orig.Name(),
 		"-f",
@@ -100,6 +107,15 @@ func (a PySwapper) PhotoBomb(orig *os.File) (*os.File, error) {
 		"-p", // photobomb
 		"-o",
 		outName,
+	}
+
+	if true == bw {
+		args = append(args, "-bw")
+	}
+
+	cmd := exec.Command(
+		"python",
+		args...
 	)
 
 	_, stdErr, err := runCommand(cmd)
@@ -117,14 +133,13 @@ func (a PySwapper) PhotoBomb(orig *os.File) (*os.File, error) {
 }
 
 // Photobomb with the success image
-func (a PySwapper) Success(orig *os.File) (*os.File, error) {
+func (a PySwapper) Success(orig *os.File, bw bool) (*os.File, error) {
 	outName, err := getTempFileName(orig)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.Command(
-		"python",
+	args := []string{
 		a.Executable,
 		orig.Name(),
 		"-f",
@@ -134,8 +149,16 @@ func (a PySwapper) Success(orig *os.File) (*os.File, error) {
 		"-p",          // For the "success" to succeed, it needs the photobomb flag
 		"-o",
 		outName,
-	)
+	}
 
+	if true == bw {
+		args = append(args, "-bw")
+	}
+
+	cmd := exec.Command(
+		"python",
+		args...
+	)
 	_, stdErr, err := runCommand(cmd)
 	if err != nil {
 		log.Printf(stdErr)
