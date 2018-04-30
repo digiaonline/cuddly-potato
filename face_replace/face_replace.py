@@ -122,7 +122,7 @@ def open_image(infile):
     return img
 
 
-def photobomb(infile, in_bodies, outfile, show=False):
+def photobomb(infile, in_bodies, outfile, greyscale=False, show=False):
     l_img = open_image(infile)
 
     body_paths = image_paths(in_bodies)
@@ -153,6 +153,9 @@ def photobomb(infile, in_bodies, outfile, show=False):
 
     l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
 
+    if greyscale:
+        l_img = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
+
     if show:
         show_image(l_img)
 
@@ -160,7 +163,7 @@ def photobomb(infile, in_bodies, outfile, show=False):
 
 
 def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
-           show=False, boxes=False):
+           greyscale=False, show=False, boxes=False):
 
     # A cache so we don't need to re-open the same image
     crisu_cache = {}
@@ -224,6 +227,9 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
         print("No faces detected")
         return False
 
+    if greyscale:
+        l_img = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
+
     if show:
         show_image(l_img)
 
@@ -284,6 +290,13 @@ if __name__ == '__main__':
         action='store_true',
         help='Photobomb instead of detecting')
     parser.add_argument(
+        '-g',
+        '-bw',
+        '--greyscale',
+        '--grayscale',
+        action='store_true',
+        help='Output in greyscale')
+    parser.add_argument(
         '-s',
         '--show',
         action='store_true',
@@ -303,6 +316,7 @@ if __name__ == '__main__':
                           args.outfile,
                           check_path(args.cascade_path, args.face_cascade),
                           check_path(args.cascade_path, args.eye_cascade),
+                          args.greyscale,
                           args.show,
                           args.boxes,
                           )
@@ -311,6 +325,7 @@ if __name__ == '__main__':
             photobomb(args.infile,
                       args.bodies,
                       args.outfile,
+                      args.greyscale,
                       args.show,
                       )
 
