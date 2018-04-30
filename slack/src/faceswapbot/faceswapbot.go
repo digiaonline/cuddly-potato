@@ -106,11 +106,11 @@ func main() {
 				} else {
 					botIdStr := fmt.Sprintf("@%s", info.User.Name)
 					rtm.SendMessage(rtm.NewOutgoingMessage(
-						"Ad `" + botIdStr + "` as a comment to image uploads for face swapping purposes :facepalm:\n" +
+						"Add `" + botIdStr + "` as a comment to image uploads for face swapping purposes :facepalm:\n" +
 							"Additional commands:\n"+
 							"`bomb` to explicitly photobomb the image :bomb:\n"+
 							"`success` to _successify_ the image :success:\n" +
-							"You can append `bw` to use a Black&White filter on the image\n" +
+							"You can append `bw` to use a black & white filter on the image\n" +
 							"e.g. `" + botIdStr + " bomb bw`",
 						ev.Channel,
 					))
