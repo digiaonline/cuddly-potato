@@ -240,12 +240,14 @@ def detect(infile, in_faces, face_cascade_path, eye_cascade_path, boxes=False):
     return l_img
 
 
-def check_path(path, filename):
+def check_path(path, filename=None):
     """Return full path if there's a file at the given path, else exit"""
-    full_path = os.path.join(path, filename)
-    if not os.path.isfile(full_path):
-        raise OSError("File not found: {}".format(full_path))
-    return full_path
+    if filename:
+        path = os.path.join(path, filename)
+
+    if not os.path.isfile(path):
+        raise OSError("File not found: {}".format(path))
+    return path
 
 
 if __name__ == '__main__':
@@ -311,6 +313,8 @@ if __name__ == '__main__':
         help='Debug: draw boxes around deteted faces')
 
     args = parser.parse_args()
+
+    check_path(args.infile)
 
     img = None
     if not args.photobomb:
