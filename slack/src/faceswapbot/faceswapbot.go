@@ -83,12 +83,19 @@ func main() {
 					// If the file is of supported type
 					if index > -1 {
 						// Handle the file
+						// Todo, we need a command parser to extract out the possible commands
 						if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BOMB") {
-							handleFile(rtm, ev, "bomb")
+							handleFile(rtm, ev, "bomb", false)
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BOMB BW") {
+							handleFile(rtm, ev, "bomb", true)
 						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "SUCCESS") {
-							handleFile(rtm, ev, "success")
+							handleFile(rtm, ev, "success", false)
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "SUCCESS BW") {
+							handleFile(rtm, ev, "success", true)
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BW") {
+							handleFile(rtm, ev, "", true)
 						} else {
-							handleFile(rtm, ev, "")
+							handleFile(rtm, ev, "", false)
 						}
 					} else {
 						rtm.SendMessage(rtm.NewOutgoingMessage(
@@ -96,14 +103,15 @@ func main() {
 							ev.Channel,
 						))
 					}
-				} else if strings.HasSuffix(strings.ToLower(ev.Text), "help") ||
-					strings.HasSuffix(strings.ToLower(ev.Text), "hjalp") ||
-					strings.HasSuffix(strings.ToLower(ev.Text), "hilfe") {
+				} else {
+					botIdStr := fmt.Sprintf("@%s", info.User.Name)
 					rtm.SendMessage(rtm.NewOutgoingMessage(
-						"Available commands are:\n"+
-							"No parameters for face swapping purposes :facepalm:\n"+
+						"Ad `" + botIdStr + "` as a comment to image uploads for face swapping purposes :facepalm:\n" +
+							"Additional commands:\n"+
 							"`bomb` to explicitly photobomb the image :bomb:\n"+
-							"`success` to _successify_ the image :success:",
+							"`success` to _successify_ the image :success:\n" +
+							"You can append `bw` to use a Black&White filter on the image\n" +
+							"e.g. `" + botIdStr + " bomb bw`",
 						ev.Channel,
 					))
 				}
@@ -144,7 +152,7 @@ func inArray(val interface{}, array interface{}) (index int) {
 
 // Download the image from Slack and pass it to the face swapper
 // Upload the manipulated image back to slack
-func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string) {
+func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string, bw bool) {
 	var swappedFile *os.File
 	var err error
 
@@ -168,11 +176,11 @@ func handleFile(rtm *slack.RTM, ev *slack.MessageEvent, command string) {
 	// Pass the temp file to the face recognition executable
 	switch command {
 	case "success":
-		swappedFile, err = faceSwapper.Success(file)
+		swappedFile, err = faceSwapper.Success(file, bw)
 	case "bomb":
-		swappedFile, err = faceSwapper.PhotoBomb(file)
+		swappedFile, err = faceSwapper.PhotoBomb(file, bw)
 	default:
-		swappedFile, err = faceSwapper.SwapFaces(file)
+		swappedFile, err = faceSwapper.SwapFaces(file, bw)
 	}
 
 	if err != nil {
