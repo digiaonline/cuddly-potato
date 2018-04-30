@@ -47,13 +47,15 @@ def paste_image(large, small, x1, y1, x2, y2):
     taking care of transparency
     """
     # Crop any bits of small extending beyond large's edges
-    if y2 > large.shape[0]:
-        y2 = large.shape[0]
+    if y1 < 0 or y2 > large.shape[0]:
+        y1 = max(y1, 0)
+        y2 = min(y2, large.shape[0])
         # Reduce height. No change to width.
         small = small[0:y2 - y1, 0:small.shape[1]]
 
-    if x2 > large.shape[1]:
-        x2 = large.shape[1]
+    if x1 < 0 or x2 > large.shape[1]:
+        x1 = max(x1, 0)
+        x2 = min(x2, large.shape[1])
         # No change to height. Reduce width.
         small = small[0:small.shape[0], 0:x2 - x1]
 
