@@ -235,7 +235,7 @@ def detect(infile, in_faces, face_cascade_path, eye_cascade_path, boxes=False):
 
     if not len(faces):
         print("No faces detected")
-        return False
+        return None
 
     return l_img
 
