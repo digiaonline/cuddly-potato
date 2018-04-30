@@ -122,7 +122,24 @@ def open_image(infile):
     return img
 
 
-def photobomb(infile, in_bodies, outfile, greyscale=False, show=False):
+def save_image(img, outfile, greyscale, show):
+    """
+    :param img: The input image array
+    :param outfile: The output filename
+    :param greyscale: Whether to convert to greyscale
+    :param show: Whether to show image in a window
+    :return: None
+    """
+    if greyscale:
+        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    if show:
+        show_image(img)
+
+    cv2.imwrite(outfile, img)
+
+
+def photobomb(infile, in_bodies):
     l_img = open_image(infile)
 
     body_paths = image_paths(in_bodies)
@@ -153,17 +170,10 @@ def photobomb(infile, in_bodies, outfile, greyscale=False, show=False):
 
     l_img = paste_image(l_img, s_img, x1, y1, x2, y2)
 
-    if greyscale:
-        l_img = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
-
-    if show:
-        show_image(l_img)
-
-    cv2.imwrite(outfile, l_img)
+    return l_img
 
 
-def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
-           greyscale=False, show=False, boxes=False):
+def detect(infile, in_faces, face_cascade_path, eye_cascade_path, boxes=False):
 
     # A cache so we don't need to re-open the same image
     crisu_cache = {}
@@ -227,14 +237,7 @@ def detect(infile, in_faces, outfile, face_cascade_path, eye_cascade_path,
         print("No faces detected")
         return False
 
-    if greyscale:
-        l_img = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
-
-    if show:
-        show_image(l_img)
-
-    cv2.imwrite(outfile, l_img)
-    return True
+    return l_img
 
 
 def check_path(path, filename):
@@ -309,24 +312,18 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    detected = False
+    img = None
     if not args.photobomb:
-        detected = detect(args.infile,
-                          args.faces,
-                          args.outfile,
-                          check_path(args.cascade_path, args.face_cascade),
-                          check_path(args.cascade_path, args.eye_cascade),
-                          args.greyscale,
-                          args.show,
-                          args.boxes,
-                          )
+        img = detect(args.infile,
+                     args.faces,
+                     check_path(args.cascade_path, args.face_cascade),
+                     check_path(args.cascade_path, args.eye_cascade),
+                     args.boxes,
+                     )
 
-    if args.photobomb or not detected:
-            photobomb(args.infile,
-                      args.bodies,
-                      args.outfile,
-                      args.greyscale,
-                      args.show,
-                      )
+    if args.photobomb or img is None:
+        img = photobomb(args.infile, args.bodies)
+
+    save_image(img, args.outfile, args.greyscale, args.show)
 
 # End of file
