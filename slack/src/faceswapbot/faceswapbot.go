@@ -84,17 +84,17 @@ func main() {
 					if index > -1 {
 						// Handle the file
 						// Todo, we need a command parser to extract out the possible commands
-						if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BOMB") {
+						if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), botId + " BOMB") {
 							handleFile(rtm, ev, "bomb", false)
-						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BOMB BW") {
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), botId + " BOMB BW") {
 							handleFile(rtm, ev, "bomb", true)
-						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "SUCCESS") {
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), botId + " SUCCESS") {
 							handleFile(rtm, ev, "success", false)
-						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "SUCCESS BW") {
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), botId + " SUCCESS BW") {
 							handleFile(rtm, ev, "success", true)
-						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), "BW") {
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), botId + "BW") {
 							handleFile(rtm, ev, "", true)
-						} else {
+						} else if strings.HasSuffix(strings.ToUpper(strings.TrimSpace(ev.Text)), botId) {
 							handleFile(rtm, ev, "", false)
 						}
 					} else {
@@ -103,7 +103,7 @@ func main() {
 							ev.Channel,
 						))
 					}
-				} else {
+				} else if ev.Comment == nil { // Check that we're not accidentally replying to bot's shared file's thread
 					botIdStr := fmt.Sprintf("@%s", info.User.Name)
 					rtm.SendMessage(rtm.NewOutgoingMessage(
 						"Add `" + botIdStr + "` as a comment to image uploads for face swapping purposes :facepalm:\n" +
