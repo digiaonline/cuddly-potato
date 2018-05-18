@@ -325,6 +325,16 @@ if __name__ == '__main__':
                      args.boxes,
                      )
 
+    if img is None:
+        # No human faces, but are there cat faces?
+        img = detect(args.infile,
+                     args.faces,
+                     check_path(args.cascade_path,
+                                "haarcascade_frontalcatface.xml"),
+                     check_path(args.cascade_path, args.eye_cascade),
+                     args.boxes,
+                     )
+
     if args.photobomb or img is None:
         img = photobomb(args.infile, args.bodies)
 
